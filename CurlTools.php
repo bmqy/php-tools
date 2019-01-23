@@ -17,20 +17,36 @@ class CurlsTools{
      * @return mixed
      * @throws Exception
      */
-    public function httpGet($url){
+    public function httpGet($url, $gzip = false, $ua='', $ck=''){
 
-        //初始化一个 cURL 对象
-        $ch  = curl_init();
-        //设置你需要抓取的URL
-        curl_setopt($ch, CURLOPT_URL, $url);
-        // 设置cURL 参数，要求结果保存到字符串中还是输出到屏幕上。
+        $ch = curl_init($url);
+        $uas = [
+            'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_8; en-us) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
+            'Mozilla/5.0 (Windows NT 6.1; rv:2.0.1) Gecko/20100101 Firefox/4.0.1',
+            'Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; en) Presto/2.8.131 Version/11.11',
+            'Opera/9.80 (Windows NT 6.1; U; en) Presto/2.8.131 Version/11.11',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11',
+            'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Maxthon 2.0)',
+            'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; TencentTraveler 4.0)',
+            'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; The World)',
+            'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; SE 2.X MetaSr 1.0; SE 2.X MetaSr 1.0; .NET CLR 2.0.50727; SE 2.X MetaSr 1.0)',
+            'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; 360SE)'
+        ];
+        $c_ua = count($uas);
+        if ($ua==='') {
+            curl_setopt($ch,CURLOPT_USERAGENT,$uas[rand(0, $c_ua - 1)]);
+        }
+        curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        //是否获得跳转后的页面
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        $result = curl_exec($ch);
+        if($ck!==''){
+            curl_setopt($ch, CURLOPT_COOKIE, $ck);
+        }
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        if($gzip) curl_setopt($ch, CURLOPT_ENCODING, "gzip"); // 关键在这里
+        $response = curl_exec($ch);
         curl_close($ch);
-        return $result;
-
+        return $response;
     }
 
 
@@ -41,27 +57,27 @@ class CurlsTools{
      * @return mixed
      * @throws Exception
      */
-    public function httpsPost($url, $param = array())
+    public function httpsPost($url, $param=array(), $ua='', $ck='')
     {
-
-        $ch = curl_init(); // 初始化一个 cURL 对象
-        curl_setopt($ch, CURLOPT_URL, $url); // 设置需要抓取的URL
-        curl_setopt($ch, CURLOPT_HEADER, 0); // // 设置header
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // 设置cURL 参数，要求结果保存到字符串中还是输出到屏幕上。
-        // 如果你想PHP去做一个正规的HTTP POST，设置这个选项为一个非零值。这个POST是普通的 application/x-www-from-urlencoded 类型，多数被HTML表单使用。
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($param)); // 传递一个作为HTTP “POST”操作的所有数据的字符串。//http_build_query:生成 URL-encode 之后的请求字符串
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-            'Content-type:application/x-www-form-urlencoded;charset=utf-8'
-        ));
-        $result = curl_exec($ch); // 运行cURL，请求网页
-        if ($errno = curl_errno($ch)) {
-            throw new Exception ('Curl Error(' . $errno . '):' . curl_error($ch));
+        $ch = curl_init($url);
+        if($ua===''){
+            curl_setopt($ch,CURLOPT_USERAGENT,"Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.2; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022)");
+        }else{
+            curl_setopt($ch,CURLOPT_USERAGENT,$ua);
         }
-        curl_close($ch); // 关闭URL请求
-        return $result; // 返回获取的数据
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($param));
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        if($ck===''){
+            curl_setopt($ch, CURLOPT_COOKIE, 'PHPSESSID=' . C('CURL_SESSION_ID'));
+        }else{
+            curl_setopt($ch, CURLOPT_COOKIE, $ck);
+        }
+        curl_setopt($ch, CURLOPT_TIMEOUT, 60);
+        $response = curl_exec($ch);
+        curl_close($ch);
+        return $response;
 
     }
 
