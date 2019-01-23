@@ -36,6 +36,8 @@ class CurlsTools{
         $c_ua = count($uas);
         if ($ua==='') {
             curl_setopt($ch,CURLOPT_USERAGENT,$uas[rand(0, $c_ua - 1)]);
+        }else{
+            curl_setopt($ch,CURLOPT_USERAGENT,$ua);
         }
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
